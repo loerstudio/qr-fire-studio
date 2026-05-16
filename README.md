@@ -29,6 +29,10 @@ FAL_API_KEY=your_fal_api_key_here
 
 Get your API key from [fal.ai](https://fal.ai)
 
+**Uses FAL.AI for:**
+- 🤖 Claude Sonnet (prompt enhancement)
+- 🎨 GPT-Image-2 (image generation)
+
 ### 3. Deploy to Vercel
 
 ```bash

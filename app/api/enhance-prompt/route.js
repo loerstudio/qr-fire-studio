@@ -4,20 +4,15 @@ export async function POST(request) {
   try {
     const { userPrompt, style } = await request.json()
 
-    // Use Claude Sonnet to enhance the prompt
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Use Claude Sonnet via Fal.ai
+    const response = await fetch('https://fal.run/fal-ai/claude-3-5-sonnet', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Key ${process.env.FAL_API_KEY}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 200,
-        messages: [{
-          role: 'user',
-          content: `Create an epic, professional image generation prompt for GPT-Image-2.
+        prompt: `Create an epic, professional image generation prompt for GPT-Image-2.
 
 Style: ${style}
 User request: ${userPrompt}
@@ -30,17 +25,17 @@ Requirements:
 - Trending on artstation quality
 - Award-winning design
 
-Return ONLY the enhanced prompt, nothing else.`
-        }]
+Return ONLY the enhanced prompt, nothing else.`,
+        max_tokens: 200
       })
     })
 
     if (!response.ok) {
-      throw new Error('Claude API failed')
+      throw new Error('Claude via Fal.ai failed')
     }
 
     const data = await response.json()
-    const enhancedPrompt = data.content[0].text.trim()
+    const enhancedPrompt = data.content.trim()
 
     return NextResponse.json({
       enhancedPrompt
