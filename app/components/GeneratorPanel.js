@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const STYLES = {
   fitness: {
@@ -34,6 +34,21 @@ export default function GeneratorPanel({ onGenerate }) {
   const [style, setStyle] = useState('fitness')
   const [customPrompt, setCustomPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [editingImage, setEditingImage] = useState(null)
+
+  // Listen for edit events from Gallery
+  useEffect(() => {
+    const handleEditImage = (event) => {
+      const image = event.detail
+      setEditingImage(image)
+      setUrl(image.qrUrl)
+      setStyle(image.style)
+      setCustomPrompt('') // Reset for new edit
+    }
+
+    window.addEventListener('editImage', handleEditImage)
+    return () => window.removeEventListener('editImage', handleEditImage)
+  }, [])
 
   const handleGenerate = async () => {
     if (!url.trim()) return
@@ -65,6 +80,7 @@ export default function GeneratorPanel({ onGenerate }) {
       // Reset form
       setUrl('')
       setCustomPrompt('')
+      setEditingImage(null) // Clear edit mode
     } catch (error) {
       console.error('Generation error:', error)
       alert(`Errore: ${error.message}`)
@@ -76,8 +92,16 @@ export default function GeneratorPanel({ onGenerate }) {
   return (
     <div className="generator-panel">
       <div className="generator-header">
-        <h2>Genera QR Code Epico</h2>
-        <p>Crea grafiche stunning con QR code integrato</p>
+        <h2>{editingImage ? '✏️ Modifica Immagine' : 'Genera QR Code Epico'}</h2>
+        <p>{editingImage ? 'Modifica il prompt per rigenerare con Claude AI' : 'Crea grafiche stunning con QR code integrato'}</p>
+        {editingImage && (
+          <button
+            onClick={() => { setEditingImage(null); setUrl(''); setCustomPrompt(''); }}
+            className="cancel-edit"
+          >
+            ← Torna alla creazione
+          </button>
+        )}
       </div>
 
       <div className="generator-form">
@@ -124,10 +148,10 @@ export default function GeneratorPanel({ onGenerate }) {
           {isGenerating ? (
             <>
               <span className="spinner"></span>
-              Generazione in corso...
+              {editingImage ? 'Rigenerando...' : 'Generazione in corso...'}
             </>
           ) : (
-            <>🚀 Genera QR Fire</>
+            <>{editingImage ? '🔄 Rigenera con Claude AI' : '🚀 Genera QR Fire'}</>
           )}
         </button>
       </div>
@@ -261,6 +285,22 @@ export default function GeneratorPanel({ onGenerate }) {
 
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+
+        .cancel-edit {
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: #999;
+          padding: 0.5rem 1rem;
+          border-radius: 0.5rem;
+          margin-top: 1rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .cancel-edit:hover {
+          background: rgba(255, 255, 255, 0.15);
+          color: white;
         }
 
         @media (max-width: 768px) {

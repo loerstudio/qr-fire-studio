@@ -27,15 +27,34 @@ export async function POST(request) {
       errorCorrectionLevel: 'H'
     })
 
-    // Create epic prompt based on style
-    const basePrompt = style.prompt
-    const enhancedPrompt = `
-      ${basePrompt}
-      ${customPrompt ? `, ${customPrompt}` : ''}
-      ultra detailed, 8K resolution, masterpiece quality, professional photography,
-      dramatic composition, trending on artstation, award winning design,
-      perfect lighting, sharp focus, high contrast, vibrant colors
-    `.trim()
+    // Enhance prompt with Claude Sonnet
+    let enhancedPrompt
+    try {
+      const promptResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/api/enhance-prompt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userPrompt: customPrompt || 'Create an epic graphic',
+          style: style.prompt
+        })
+      })
+
+      if (promptResponse.ok) {
+        const promptData = await promptResponse.json()
+        enhancedPrompt = promptData.enhancedPrompt
+      } else {
+        throw new Error('Prompt enhancement failed')
+      }
+    } catch (error) {
+      // Fallback to basic enhancement
+      enhancedPrompt = `
+        ${style.prompt}
+        ${customPrompt ? `, ${customPrompt}` : ''}
+        ultra detailed, 8K resolution, masterpiece quality, professional photography,
+        dramatic composition, trending on artstation, award winning design,
+        perfect lighting, sharp focus, high contrast, vibrant colors
+      `.trim()
+    }
 
     // Use Fal.ai to generate image
     let generatedImageUrl
@@ -43,7 +62,7 @@ export async function POST(request) {
     if (process.env.FAL_API_KEY && process.env.FAL_API_KEY !== 'demo') {
       try {
         // Call Fal.ai gptimage2 API
-        const response = await fetch('https://fal.run/fal-ai/fast-sdxl', {
+        const response = await fetch('https://fal.run/fal-ai/gpt-image-2', {
           method: 'POST',
           headers: {
             'Authorization': `Key ${process.env.FAL_API_KEY}`,
@@ -51,10 +70,8 @@ export async function POST(request) {
           },
           body: JSON.stringify({
             prompt: enhancedPrompt,
-            image_size: 'square_hd',
-            num_inference_steps: 25,
-            guidance_scale: 7.5,
-            num_images: 1
+            aspect_ratio: '1:1',
+            quality: 'hd'
           })
         })
 

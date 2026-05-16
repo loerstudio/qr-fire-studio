@@ -33,9 +33,17 @@ export default function Gallery({ images }) {
                 <span className="gallery-style">{image.style}</span>
                 <span className="gallery-url">{image.qrUrl}</span>
               </div>
-              <a href={image.url} download className="download-btn">
-                ⬇️ Download
-              </a>
+              <div className="gallery-actions">
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('editImage', { detail: image }))}
+                  className="edit-btn"
+                >
+                  ✏️ Edit
+                </button>
+                <a href={image.url} download className="download-btn">
+                  ⬇️ Download
+                </a>
+              </div>
             </div>
           </div>
         ))}
@@ -126,6 +134,28 @@ export default function Gallery({ images }) {
 
         .download-btn:hover {
           transform: scale(1.05);
+        }
+
+        .gallery-actions {
+          display: flex;
+          gap: 0.5rem;
+        }
+
+        .edit-btn {
+          background: rgba(255, 255, 255, 0.2);
+          color: white;
+          padding: 0.5rem 1rem;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          border-radius: 0.5rem;
+          text-decoration: none;
+          font-weight: 600;
+          display: inline-block;
+          transition: all 0.2s;
+          cursor: pointer;
+        }
+
+        .edit-btn:hover {
+          background: rgba(255, 255, 255, 0.3);
         }
       `}</style>
     </div>
