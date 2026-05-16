@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import fal from '@fal-ai/client'
 import QRCode from 'qrcode'
 import { createCanvas, loadImage } from 'canvas'
 
@@ -42,31 +41,43 @@ export async function POST(request) {
     let generatedImageUrl
 
     if (process.env.FAL_API_KEY && process.env.FAL_API_KEY !== 'demo') {
-      // Configure Fal.ai with API key
-      fal.config = {
-        credentials: process.env.FAL_API_KEY
-      }
+      try {
+        // Call Fal.ai API using fetch directly
+        const response = await fetch('https://fal.run/fal-ai/flux-pro', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Key ${process.env.FAL_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            prompt: enhancedPrompt,
+            image_size: 'square_hd',
+            num_inference_steps: 25,
+            guidance_scale: 3.5,
+            num_images: 1,
+            safety_tolerance: 2
+          })
+        })
 
-      // Call Fal.ai API - using the correct model
-      const result = await fal.subscribe('fal-ai/flux-pro', {
-        input: {
-          prompt: enhancedPrompt,
-          image_size: 'square_hd',
-          num_inference_steps: 25,
-          guidance_scale: 3.5,
-          num_images: 1,
-          safety_tolerance: 2
+        if (!response.ok) {
+          throw new Error('AI generation failed')
         }
-      })
 
-      if (!result.images || result.images.length === 0) {
-        throw new Error('No image generated')
+        const result = await response.json()
+
+        if (!result.images || result.images.length === 0) {
+          throw new Error('No image generated')
+        }
+
+        const aiImageUrl = result.images[0].url
+
+        // Overlay QR code on AI image
+        generatedImageUrl = await overlayQRCode(aiImageUrl, qrCodeDataUrl)
+      } catch (aiError) {
+        console.log('AI generation failed, using demo mode:', aiError.message)
+        // Fallback to demo mode
+        generatedImageUrl = await createStyledQR(qrCodeDataUrl, style.name)
       }
-
-      const aiImageUrl = result.images[0].url
-
-      // Overlay QR code on AI image
-      generatedImageUrl = await overlayQRCode(aiImageUrl, qrCodeDataUrl)
     } else {
       // Demo mode - return styled QR without AI
       generatedImageUrl = await createStyledQR(qrCodeDataUrl, style.name)
