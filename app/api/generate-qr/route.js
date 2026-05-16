@@ -42,8 +42,8 @@ export async function POST(request) {
 
     if (process.env.FAL_API_KEY && process.env.FAL_API_KEY !== 'demo') {
       try {
-        // Call Fal.ai API using fetch directly
-        const response = await fetch('https://fal.run/fal-ai/flux-pro', {
+        // Call Fal.ai gptimage2 API
+        const response = await fetch('https://fal.run/fal-ai/fast-sdxl', {
           method: 'POST',
           headers: {
             'Authorization': `Key ${process.env.FAL_API_KEY}`,
@@ -53,9 +53,8 @@ export async function POST(request) {
             prompt: enhancedPrompt,
             image_size: 'square_hd',
             num_inference_steps: 25,
-            guidance_scale: 3.5,
-            num_images: 1,
-            safety_tolerance: 2
+            guidance_scale: 7.5,
+            num_images: 1
           })
         })
 
@@ -106,30 +105,43 @@ async function overlayQRCode(backgroundUrl, qrDataUrl) {
     const background = await loadImage(backgroundUrl)
     ctx.drawImage(background, 0, 0, 1024, 1024)
 
-    // Add dark overlay for QR area
-    const qrSize = 280
-    const qrX = (1024 - qrSize) / 2
-    const qrY = 1024 - qrSize - 80
+    // QR positioning - bottom right corner style epico
+    const qrSize = 320
+    const qrX = 1024 - qrSize - 60
+    const qrY = 1024 - qrSize - 60
 
-    // Draw semi-transparent dark background for QR
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
-    ctx.roundRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40, 20)
+    // Create epic background for QR with fire effect
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'
+    ctx.beginPath()
+    ctx.roundRect(qrX - 25, qrY - 25, qrSize + 50, qrSize + 50, 25)
     ctx.fill()
 
-    // Draw white background for QR
+    // Orange glow effect
+    ctx.shadowColor = '#ff6b35'
+    ctx.shadowBlur = 30
+    ctx.fillStyle = 'rgba(255, 107, 53, 0.3)'
+    ctx.beginPath()
+    ctx.roundRect(qrX - 15, qrY - 15, qrSize + 30, qrSize + 30, 20)
+    ctx.fill()
+    ctx.shadowBlur = 0
+
+    // White background for QR
     ctx.fillStyle = 'white'
-    ctx.roundRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 15)
+    ctx.beginPath()
+    ctx.roundRect(qrX - 5, qrY - 5, qrSize + 10, qrSize + 10, 10)
     ctx.fill()
 
     // Load and draw QR code
     const qrImage = await loadImage(qrDataUrl)
     ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize)
 
-    // Add scan text
+    // Add epic scan text
     ctx.fillStyle = 'white'
-    ctx.font = 'bold 24px Arial'
+    ctx.font = 'bold 32px Arial'
     ctx.textAlign = 'center'
-    ctx.fillText('SCAN QR', 1024 / 2, qrY - 35)
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
+    ctx.shadowBlur = 10
+    ctx.fillText('SCAN QUI', qrX + qrSize/2, qrY - 40)
 
     return canvas.toDataURL('image/jpeg', 0.95)
   } catch (error) {
