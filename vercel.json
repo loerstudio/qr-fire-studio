@@ -1,0 +1,10 @@
+{
+  "env": {
+    "FAL_API_KEY": "@fal_api_key"
+  },
+  "build": {
+    "env": {
+      "FAL_API_KEY": "@fal_api_key"
+    }
+  }
+}
