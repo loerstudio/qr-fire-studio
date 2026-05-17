@@ -50,6 +50,7 @@ export async function POST(request) {
       enhancedPrompt = `
         ${style.prompt}
         ${customPrompt ? `, ${customPrompt}` : ''}
+        NO QR CODE in the image, no barcode, no square patterns,
         ultra detailed, 8K resolution, masterpiece quality, professional photography,
         dramatic composition, trending on artstation, award winning design,
         perfect lighting, sharp focus, high contrast, vibrant colors
@@ -125,33 +126,33 @@ async function overlayQRCode(backgroundUrl, qrDataUrl) {
     const background = await loadImage(backgroundUrl)
     ctx.drawImage(background, 0, 0, 1024, 1024)
 
-    // QR positioning - bottom right corner style epico
-    const qrSize = 320
-    const qrX = 1024 - qrSize - 60
-    const qrY = 1024 - qrSize - 60
+    // QR positioning - top right corner, smaller, not covering text
+    const qrSize = 200  // Smaller QR
+    const qrX = 1024 - qrSize - 40  // Top right
+    const qrY = 40  // Near top
 
-    // Create epic background for QR with fire effect
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'
+    // Create subtle background for QR with glow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
     ctx.beginPath()
-    ctx.roundRect(qrX - 25, qrY - 25, qrSize + 50, qrSize + 50, 25)
+    ctx.roundRect(qrX - 15, qrY - 15, qrSize + 30, qrSize + 30, 15)
     ctx.fill()
 
-    // Orange glow effect
+    // Subtle orange glow
     ctx.shadowColor = '#ff6b35'
-    ctx.shadowBlur = 30
-    ctx.fillStyle = 'rgba(255, 107, 53, 0.3)'
+    ctx.shadowBlur = 20
+    ctx.fillStyle = 'rgba(255, 107, 53, 0.2)'
     ctx.beginPath()
-    ctx.roundRect(qrX - 15, qrY - 15, qrSize + 30, qrSize + 30, 20)
+    ctx.roundRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 12)
     ctx.fill()
     ctx.shadowBlur = 0
 
     // White background for QR
     ctx.fillStyle = 'white'
     ctx.beginPath()
-    ctx.roundRect(qrX - 5, qrY - 5, qrSize + 10, qrSize + 10, 10)
+    ctx.roundRect(qrX - 5, qrY - 5, qrSize + 10, qrSize + 10, 8)
     ctx.fill()
 
-    // Load and draw QR code
+    // Load and draw QR code - ONLY ONE!
     const qrImage = await loadImage(qrDataUrl)
     ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize)
 
