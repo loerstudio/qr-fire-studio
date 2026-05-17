@@ -27,7 +27,7 @@ export async function POST(request) {
       errorCorrectionLevel: 'H'
     })
 
-    // Enhance prompt with Claude Sonnet
+    // Enhance prompt - avoid text generation issues
     let enhancedPrompt
     try {
       const promptResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/api/enhance-prompt`, {

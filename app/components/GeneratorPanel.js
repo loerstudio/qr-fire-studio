@@ -55,13 +55,31 @@ export default function GeneratorPanel({ onGenerate }) {
 
     setIsGenerating(true)
     try {
+      // Correct any typos in custom prompt
+      let correctedPrompt = customPrompt
+      if (customPrompt) {
+        const correctResponse = await fetch('/api/correct-text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: customPrompt })
+        })
+
+        if (correctResponse.ok) {
+          const { correctedText, hadErrors } = await correctResponse.json()
+          correctedPrompt = correctedText
+          if (hadErrors) {
+            console.log('Auto-corrected text:', customPrompt, '→', correctedText)
+          }
+        }
+      }
+
       const response = await fetch('/api/generate-qr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           url: url.trim(),
           style: STYLES[style],
-          customPrompt
+          customPrompt: correctedPrompt
         })
       })
 
