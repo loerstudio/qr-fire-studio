@@ -126,33 +126,42 @@ async function overlayQRCode(backgroundUrl, qrDataUrl) {
     const background = await loadImage(backgroundUrl)
     ctx.drawImage(background, 0, 0, 1024, 1024)
 
-    // QR positioning - top right corner, smaller, not covering text
-    const qrSize = 200  // Smaller QR
-    const qrX = 1024 - qrSize - 40  // Top right
-    const qrY = 40  // Near top
+    // QR positioning - bottom center, proportionate
+    const qrSize = 180  // Proportionate size
+    const qrX = (1024 - qrSize) / 2  // Centered horizontally
+    const qrY = 1024 - qrSize - 80  // Bottom with margin
 
-    // Create subtle background for QR with glow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+    // Create semi-transparent dark background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)'
     ctx.beginPath()
-    ctx.roundRect(qrX - 15, qrY - 15, qrSize + 30, qrSize + 30, 15)
+    ctx.roundRect(qrX - 20, qrY - 55, qrSize + 40, qrSize + 75, 15)
     ctx.fill()
 
-    // Subtle orange glow
+    // Add "SCAN QUI" text above QR
+    ctx.fillStyle = '#ff6b35'  // Orange color
+    ctx.font = 'bold 24px Arial'
+    ctx.textAlign = 'center'
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
+    ctx.shadowBlur = 5
+    ctx.fillText('SCAN QUI', qrX + qrSize/2, qrY - 15)
+    ctx.shadowBlur = 0
+
+    // Orange glow effect around QR
     ctx.shadowColor = '#ff6b35'
-    ctx.shadowBlur = 20
-    ctx.fillStyle = 'rgba(255, 107, 53, 0.2)'
+    ctx.shadowBlur = 15
+    ctx.fillStyle = 'rgba(255, 107, 53, 0.15)'
     ctx.beginPath()
-    ctx.roundRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 12)
+    ctx.roundRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 10)
     ctx.fill()
     ctx.shadowBlur = 0
 
     // White background for QR
     ctx.fillStyle = 'white'
     ctx.beginPath()
-    ctx.roundRect(qrX - 5, qrY - 5, qrSize + 10, qrSize + 10, 8)
+    ctx.roundRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 6)
     ctx.fill()
 
-    // Load and draw QR code - ONLY ONE!
+    // Load and draw QR code
     const qrImage = await loadImage(qrDataUrl)
     ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize)
 
