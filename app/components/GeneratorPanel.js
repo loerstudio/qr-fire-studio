@@ -29,11 +29,10 @@ const STYLES = {
   }
 }
 
-export default function GeneratorPanel({ onGenerate }) {
+export default function GeneratorPanel({ onGenerate, isGenerating, setIsGenerating }) {
   const [url, setUrl] = useState('')
   const [style, setStyle] = useState('fitness')
   const [customPrompt, setCustomPrompt] = useState('')
-  const [isGenerating, setIsGenerating] = useState(false)
   const [editingImage, setEditingImage] = useState(null)
 
   // Listen for edit events from Gallery
@@ -54,6 +53,7 @@ export default function GeneratorPanel({ onGenerate }) {
     if (!url.trim()) return
 
     setIsGenerating(true)
+    localStorage.setItem('qr-fire-generating', 'true')
     try {
       // Correct any typos in custom prompt
       let correctedPrompt = customPrompt
@@ -110,6 +110,7 @@ export default function GeneratorPanel({ onGenerate }) {
       alert(`Errore: ${error.message}`)
     } finally {
       setIsGenerating(false)
+      localStorage.removeItem('qr-fire-generating')
     }
   }
 

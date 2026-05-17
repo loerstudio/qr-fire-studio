@@ -7,6 +7,7 @@ import Gallery from '../components/Gallery'
 export default function Dashboard() {
   const [generations, setGenerations] = useState([])
   const [activeTab, setActiveTab] = useState('generate')
+  const [isGenerating, setIsGenerating] = useState(false)
 
   // Load saved images from localStorage on mount
   useEffect(() => {
@@ -18,7 +19,35 @@ export default function Dashboard() {
         console.error('Failed to load gallery:', e)
       }
     }
+    // Check if there's an ongoing generation
+    const generating = localStorage.getItem('qr-fire-generating')
+    if (generating === 'true') {
+      setIsGenerating(true)
+    }
   }, [])
+
+  // Poll for generation completion
+  useEffect(() => {
+    if (isGenerating) {
+      const interval = setInterval(() => {
+        const stillGenerating = localStorage.getItem('qr-fire-generating')
+        if (stillGenerating !== 'true') {
+          setIsGenerating(false)
+          // Reload gallery
+          const saved = localStorage.getItem('qr-fire-gallery')
+          if (saved) {
+            try {
+              setGenerations(JSON.parse(saved))
+            } catch (e) {
+              console.error('Failed to reload gallery:', e)
+            }
+          }
+        }
+      }, 1000)
+
+      return () => clearInterval(interval)
+    }
+  }, [isGenerating])
 
   // Save to localStorage whenever generations change
   useEffect(() => {
@@ -46,7 +75,7 @@ export default function Dashboard() {
             className={activeTab === 'generate' ? 'active' : ''}
             onClick={() => setActiveTab('generate')}
           >
-            Generate
+            Generate {isGenerating && '🔄'}
           </button>
           <button
             className={activeTab === 'gallery' ? 'active' : ''}
@@ -62,7 +91,11 @@ export default function Dashboard() {
 
       <main className="dash-main">
         {activeTab === 'generate' ? (
-          <GeneratorPanel onGenerate={handleNewGeneration} />
+          <GeneratorPanel
+            onGenerate={handleNewGeneration}
+            isGenerating={isGenerating}
+            setIsGenerating={setIsGenerating}
+          />
         ) : (
           <Gallery images={generations} />
         )}
