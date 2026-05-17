@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "canvas": "^3.2.3",
+    "jimp": "^1.6.1",
     "next": "^16.2.6",
     "qrcode": "^1.5.4",
     "react": "^19.2.6",
