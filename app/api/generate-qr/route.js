@@ -91,8 +91,40 @@ export async function POST(request) {
 
         const aiImageUrl = result.images[0].url
 
-        // Overlay QR code on AI image
-        generatedImageUrl = await overlayQRCode(aiImageUrl, qrCodeDataUrl)
+        // Parse custom prompt to extract template text
+        let topText = "IL MEDICO TI"
+        let topText2 = "PRENDE PER PAZZO?"
+        let bottomText1 = "SDF È LA"
+        let bottomText2 = "SOLUZIONE"
+
+        // Extract text from customPrompt if provided
+        if (customPrompt && customPrompt.includes("'")) {
+          const match = customPrompt.match(/'([^']+)'/)
+          if (match) {
+            const fullText = match[1].toUpperCase()
+            // Split intelligently
+            const lines = fullText.split(/\?|!/).map(l => l.trim()).filter(l => l)
+            if (lines[0]) {
+              const firstPart = lines[0].split(' ')
+              const mid = Math.ceil(firstPart.length / 2)
+              topText = firstPart.slice(0, mid).join(' ')
+              topText2 = firstPart.slice(mid).join(' ') + '?'
+            }
+            if (lines[1] && lines[1].includes('È')) {
+              const parts = lines[1].split('È')
+              bottomText1 = parts[0].trim() + ' È'
+              bottomText2 = parts[1]?.trim() || 'LA SOLUZIONE'
+            }
+          }
+        }
+
+        // Overlay QR code with template layout
+        generatedImageUrl = await overlayQRTemplate(aiImageUrl, qrCodeDataUrl, {
+          topText,
+          topText2,
+          bottomText1,
+          bottomText2
+        })
       } catch (aiError) {
         console.log('AI generation failed, using demo mode:', aiError.message)
         // Fallback to demo mode
@@ -117,7 +149,7 @@ export async function POST(request) {
   }
 }
 
-async function overlayQRCode(backgroundUrl, qrDataUrl) {
+async function overlayQRTemplate(backgroundUrl, qrDataUrl, texts) {
   try {
     const canvas = createCanvas(1024, 1024)
     const ctx = canvas.getContext('2d')
@@ -126,44 +158,70 @@ async function overlayQRCode(backgroundUrl, qrDataUrl) {
     const background = await loadImage(backgroundUrl)
     ctx.drawImage(background, 0, 0, 1024, 1024)
 
-    // QR positioning - bottom center, smaller to not interfere with text
-    const qrSize = 150  // Smaller size to not cover text
-    const qrX = (1024 - qrSize) / 2  // Centered horizontally
-    const qrY = 1024 - qrSize - 40  // Very bottom with small margin
+    // Add gradient overlay for text readability
+    const gradient = ctx.createLinearGradient(0, 0, 0, 1024)
+    gradient.addColorStop(0, 'rgba(0, 0, 0, 0.4)')
+    gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.1)')
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)')
+    ctx.fillStyle = gradient
+    ctx.fillRect(0, 0, 1024, 1024)
 
-    // Create compact semi-transparent dark background
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)'
-    ctx.beginPath()
-    ctx.roundRect(qrX - 15, qrY - 45, qrSize + 30, qrSize + 60, 12)
-    ctx.fill()
-
-    // Add "SCAN QUI" text above QR (smaller)
-    ctx.fillStyle = '#ff6b35'  // Orange color
-    ctx.font = 'bold 20px Arial'
+    // TOP TEXT - Big and dramatic
+    ctx.fillStyle = 'white'
+    ctx.font = 'bold 72px Arial'
     ctx.textAlign = 'center'
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
-    ctx.shadowBlur = 5
-    ctx.fillText('SCAN QUI', qrX + qrSize/2, qrY - 12)
-    ctx.shadowBlur = 0
+    ctx.textBaseline = 'middle'
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)'
+    ctx.shadowBlur = 10
+    ctx.shadowOffsetX = 3
+    ctx.shadowOffsetY = 3
 
-    // Orange glow effect around QR
-    ctx.shadowColor = '#ff6b35'
-    ctx.shadowBlur = 15
-    ctx.fillStyle = 'rgba(255, 107, 53, 0.15)'
+    // First line
+    ctx.fillText(texts.topText, 512, 150)
+
+    // Second line (orange)
+    ctx.fillStyle = '#ff6b35'
+    ctx.fillText(texts.topText2, 512, 230)
+
+    // BOTTOM TEXT WITH QR - "SDF È LA SOLUZIONE" layout
+    const qrSize = 140
+    const bottomY = 750
+
+    // "SDF È LA" text
+    ctx.fillStyle = 'white'
+    ctx.font = 'bold 64px Arial'
+    ctx.textAlign = 'right'
+    ctx.fillText(texts.bottomText1, 420, bottomY)
+
+    // QR Code background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
     ctx.beginPath()
-    ctx.roundRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 10)
+    ctx.roundRect(442, bottomY - 70 - 10, qrSize + 20, qrSize + 20, 10)
     ctx.fill()
-    ctx.shadowBlur = 0
 
     // White background for QR
     ctx.fillStyle = 'white'
     ctx.beginPath()
-    ctx.roundRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 6)
+    ctx.roundRect(447, bottomY - 70 - 5, qrSize + 10, qrSize + 10, 5)
     ctx.fill()
 
-    // Load and draw QR code
+    // Draw QR code
     const qrImage = await loadImage(qrDataUrl)
-    ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize)
+    ctx.drawImage(qrImage, 452, bottomY - 70, qrSize, qrSize)
+
+    // "SCAN QUI" under QR
+    ctx.fillStyle = '#ff6b35'
+    ctx.font = 'bold 18px Arial'
+    ctx.textAlign = 'center'
+    ctx.shadowBlur = 5
+    ctx.fillText('SCAN QUI', 452 + qrSize/2, bottomY + 85)
+
+    // "SOLUZIONE" text (orange, after QR)
+    ctx.fillStyle = '#ff6b35'
+    ctx.font = 'bold 64px Arial'
+    ctx.textAlign = 'left'
+    ctx.shadowBlur = 10
+    ctx.fillText(texts.bottomText2, 610, bottomY)
 
     return canvas.toDataURL('image/jpeg', 0.95)
   } catch (error) {
