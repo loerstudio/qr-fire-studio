@@ -61,8 +61,8 @@ export async function POST(request) {
 
     if (process.env.FAL_API_KEY && process.env.FAL_API_KEY !== 'demo') {
       try {
-        // Call Fal.ai gptimage2 API
-        const response = await fetch('https://fal.run/fal-ai/gpt-image-2', {
+        // Call Fal.ai GPT-Image-2 text-to-image API
+        const response = await fetch('https://fal.run/openai/gpt-image-2', {
           method: 'POST',
           headers: {
             'Authorization': `Key ${process.env.FAL_API_KEY}`,
@@ -70,8 +70,11 @@ export async function POST(request) {
           },
           body: JSON.stringify({
             prompt: enhancedPrompt,
-            aspect_ratio: '1:1',
-            quality: 'hd'
+            quality: 'high',
+            image_size: {
+              width: 1024,
+              height: 1024
+            }
           })
         })
 
