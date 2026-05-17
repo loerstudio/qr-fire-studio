@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import Replicate from 'replicate'
+import QRCode from 'qrcode'
 
 export async function POST(request) {
   try {
@@ -15,65 +15,62 @@ export async function POST(request) {
       }
     }
 
-    // Parse custom prompt to extract text
-    let topLine1 = "Parli di"
-    let topLine2 = "SALUTE"
-    let topLine3 = "DI FERRO?"
+    // Generate QR Code as data URL (for frontend)
+    const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
+      width: 300,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      },
+      errorCorrectionLevel: 'H'
+    })
 
-    // Extract custom text if provided
-    if (customPrompt && customPrompt.includes("'")) {
-      const match = customPrompt.match(/'([^']+)'/)
-      if (match) {
-        const text = match[1]
-        if (text.toLowerCase().includes('medico')) {
-          topLine1 = "IL MEDICO TI"
-          topLine2 = "PRENDE"
-          topLine3 = "PER PAZZO?"
-        }
-      }
-    }
+    // Enhanced prompt for Fal.ai (with clear QR area)
+    let enhancedPrompt = `
+      ${style.prompt}
+      ${customPrompt || ''}
+      dramatic muscular athlete, fire effects, lightning, epic pose,
+      dark dramatic background, orange and red flames,
+      leave center-right area COMPLETELY CLEAR for QR code placement,
+      professional layout, 8K resolution, cinematic quality
+    `.trim()
 
-    // Enhanced prompt for Replicate QR model
-    let enhancedPrompt = `${style.prompt} ${customPrompt || ''} Golden text: "${topLine1} ${topLine2} ${topLine3}" SCAN QUI, dramatic muscular athlete, fire effects, lightning, epic pose, dark background, orange flames, professional typography, 8K quality`
+    // Use Fal.ai to generate AI background
+    let aiImageUrl = null
 
-    // Use Replicate QR Code model
-    let generatedImageUrl
-
-    if (process.env.REPLICATE_API_TOKEN) {
+    if (process.env.FAL_API_KEY && process.env.FAL_API_KEY !== 'demo') {
       try {
-        const replicate = new Replicate({
-          auth: process.env.REPLICATE_API_TOKEN,
-        })
-
-        // Use QR code generation model
-        const output = await replicate.run(
-          "zylim0702/qr_code_controlnet:8451a4e4b51e5e42bbf4a3b0a2b75e88c4e5e6fdc2e1a5d8b8f8f8f8f8f8f8f8",
-          {
-            input: {
-              prompt: enhancedPrompt,
-              qr_code_content: qrUrl,
-              guidance_scale: 7.5,
-              strength: 0.8,
+        const response = await fetch('https://fal.run/openai/gpt-image-2', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Key ${process.env.FAL_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            prompt: enhancedPrompt,
+            quality: 'high',
+            image_size: {
               width: 1024,
               height: 1024
             }
+          })
+        })
+
+        if (response.ok) {
+          const result = await response.json()
+          if (result.images && result.images.length > 0) {
+            aiImageUrl = result.images[0].url
           }
-        )
-
-        generatedImageUrl = output[0] // Replicate returns image URL
-
-      } catch (replicateError) {
-        console.error('Replicate generation failed:', replicateError.message)
-        // Fallback to demo mode
-        generatedImageUrl = createDemoImage()
+        }
+      } catch (error) {
+        console.error('Fal.ai generation failed:', error)
       }
-    } else {
-      // Demo mode
-      generatedImageUrl = createDemoImage()
     }
 
     return NextResponse.json({
-      imageUrl: generatedImageUrl,
+      aiImageUrl: aiImageUrl, // AI background image
+      qrCodeDataUrl: qrCodeDataUrl, // QR code as data URL
       qrUrl: qrUrl
     })
 
@@ -86,22 +83,4 @@ export async function POST(request) {
   }
 }
 
-function createDemoImage() {
-  // Return a demo base64 image with QR placeholder
-  return "data:image/svg+xml;base64," + btoa(`
-    <svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
-          <stop offset="100%" style="stop-color:#FF8C00;stop-opacity:1" />
-        </linearGradient>
-      </defs>
-      <rect width="1024" height="1024" fill="url(#grad)"/>
-      <text x="512" y="200" text-anchor="middle" font-size="72" font-weight="bold" fill="#000">QR FIRE</text>
-      <text x="512" y="280" text-anchor="middle" font-size="48" fill="#000">DEMO MODE</text>
-      <rect x="400" y="400" width="200" height="200" fill="#000" stroke="#fff" stroke-width="10"/>
-      <text x="512" y="700" text-anchor="middle" font-size="32" fill="#000">Add REPLICATE_API_TOKEN</text>
-    </svg>
-  `)
-}
 

@@ -1,173 +1,258 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import GeneratorPanel from '../components/GeneratorPanel'
-import Gallery from '../components/Gallery'
+import { useState, useEffect, useRef } from 'react'
 
 export default function Dashboard() {
-  const [generations, setGenerations] = useState([])
-  const [activeTab, setActiveTab] = useState('generate')
+  const [messages, setMessages] = useState([
+    {
+      role: 'assistant',
+      content: "🔥 **QR Fire Studio**\n\nCrea QR codes epici con AI! Invia:\n• URL del tuo sito\n• Immagine reference per lo stile\n• Descrizione del design",
+      timestamp: new Date()
+    }
+  ])
+  const [input, setInput] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
-  // Form state persisted at dashboard level
-  const [formData, setFormData] = useState({
-    url: '',
-    style: 'fitness',
-    customPrompt: ''
-  })
+  const [referenceImage, setReferenceImage] = useState(null)
+  const messagesEndRef = useRef(null)
+  const fileInputRef = useRef(null)
 
-  // Load saved images from localStorage on mount
+  // Auto scroll to bottom
   useEffect(() => {
-    const saved = localStorage.getItem('qr-fire-gallery')
-    if (saved) {
-      try {
-        setGenerations(JSON.parse(saved))
-      } catch (e) {
-        console.error('Failed to load gallery:', e)
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setReferenceImage(e.target.result)
+        addMessage('user', `📸 Reference image uploaded: ${file.name}`)
       }
+      reader.readAsDataURL(file)
     }
-    // Check if there's an ongoing generation
-    const generating = localStorage.getItem('qr-fire-generating')
-    if (generating === 'true') {
-      setIsGenerating(true)
+  }
+
+  const addMessage = (role, content) => {
+    setMessages(prev => [...prev, {
+      role,
+      content,
+      timestamp: new Date(),
+      image: role === 'assistant' ? null : undefined
+    }])
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!input.trim()) return
+
+    const userMessage = input.trim()
+    addMessage('user', userMessage)
+    setInput('')
+    setIsGenerating(true)
+
+    try {
+      // Parse URL from message
+      const urlMatch = userMessage.match(/(https?:\/\/[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
+      const url = urlMatch ? urlMatch[0] : 'https://example.com'
+
+      // Call GPT-Image-2 API exactly like Manus
+      const response = await fetch('/api/generate-manus-style', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: userMessage,
+          url: url,
+          referenceImage: referenceImage,
+          style: "Fitness fire epic QR code design"
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.error) {
+        addMessage('assistant', `❌ Errore: ${data.error}`)
+      } else {
+        // Add image result like Manus
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: '🔥 **QR Code generato!**\n\nEcco il tuo QR code epico con grafica AI integrata. Pronto per il download!',
+          timestamp: new Date(),
+          image: data.imageUrl
+        }])
+      }
+    } catch (error) {
+      addMessage('assistant', `❌ Errore: ${error.message}`)
+    } finally {
+      setIsGenerating(false)
     }
-  }, [])
-
-  // Poll for generation completion
-  useEffect(() => {
-    if (isGenerating) {
-      const interval = setInterval(() => {
-        const stillGenerating = localStorage.getItem('qr-fire-generating')
-        if (stillGenerating !== 'true') {
-          setIsGenerating(false)
-          // Reload gallery
-          const saved = localStorage.getItem('qr-fire-gallery')
-          if (saved) {
-            try {
-              setGenerations(JSON.parse(saved))
-            } catch (e) {
-              console.error('Failed to reload gallery:', e)
-            }
-          }
-        }
-      }, 1000)
-
-      return () => clearInterval(interval)
-    }
-  }, [isGenerating])
-
-  // Save to localStorage whenever generations change
-  useEffect(() => {
-    if (generations.length > 0) {
-      localStorage.setItem('qr-fire-gallery', JSON.stringify(generations))
-    }
-  }, [generations])
-
-  const handleNewGeneration = (image) => {
-    setGenerations(prev => {
-      const updated = [image, ...prev]
-      // Limit to 50 images to avoid localStorage limits
-      return updated.slice(0, 50)
-    })
-    // Switch to gallery to show the new image
-    setActiveTab('gallery')
   }
 
   return (
-    <div className="dashboard">
-      <nav className="dash-nav">
-        <h1 className="dash-logo">🔥 QR Fire Studio</h1>
-        <div className="nav-tabs">
-          <button
-            className={activeTab === 'generate' ? 'active' : ''}
-            onClick={() => setActiveTab('generate')}
-          >
-            Generate {isGenerating && '🔄'}
-          </button>
-          <button
-            className={activeTab === 'gallery' ? 'active' : ''}
-            onClick={() => setActiveTab('gallery')}
-          >
-            Gallery ({generations.length})
-          </button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-orange-900 text-white">
+      {/* Header */}
+      <div className="border-b border-orange-500/20 bg-black/50 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+                🔥
+              </div>
+              <div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                  QR Fire Studio
+                </h1>
+                <p className="text-xs text-gray-400">AI QR Code Generator</p>
+              </div>
+            </div>
+            <button className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-orange-700 hover:to-red-700 transition-all">
+              Pro Version
+            </button>
+          </div>
         </div>
-        <div className="user-menu">
-          <span>Free Trial</span>
+      </div>
+
+      {/* Chat Container */}
+      <div className="max-w-4xl mx-auto h-[calc(100vh-140px)] flex flex-col">
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {messages.map((message, index) => (
+            <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[80%] ${
+                message.role === 'user'
+                  ? 'bg-gradient-to-r from-orange-600 to-red-600'
+                  : 'bg-gray-800 border border-orange-500/20'
+              } rounded-2xl px-4 py-3`}>
+                {message.role === 'assistant' && (
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-xs">
+                      🔥
+                    </div>
+                    <span className="text-sm font-medium text-orange-400">QR Fire Studio</span>
+                  </div>
+                )}
+
+                <div className="prose prose-invert prose-sm max-w-none">
+                  {message.content.split('\n').map((line, i) => {
+                    if (line.startsWith('**') && line.endsWith('**')) {
+                      return <div key={i} className="font-bold text-orange-400 mb-2">{line.slice(2, -2)}</div>
+                    }
+                    if (line.startsWith('•')) {
+                      return <div key={i} className="text-gray-300 ml-2">{line}</div>
+                    }
+                    return <div key={i} className="text-gray-100">{line}</div>
+                  })}
+                </div>
+
+                {message.image && (
+                  <div className="mt-3 rounded-lg overflow-hidden border border-orange-500/30">
+                    <img
+                      src={message.image}
+                      alt="Generated QR Code"
+                      className="w-full max-w-md rounded-lg"
+                    />
+                    <div className="p-3 bg-gray-900/50">
+                      <button
+                        onClick={() => {
+                          const link = document.createElement('a')
+                          link.href = message.image
+                          link.download = `qr-fire-${Date.now()}.jpg`
+                          link.click()
+                        }}
+                        className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-orange-700 hover:to-red-700 transition-all w-full"
+                      >
+                        📥 Download QR Code
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-xs text-gray-500 mt-2">
+                  {message.timestamp.toLocaleTimeString()}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {isGenerating && (
+            <div className="flex justify-start">
+              <div className="bg-gray-800 border border-orange-500/20 rounded-2xl px-4 py-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-xs">
+                    🔥
+                  </div>
+                  <span className="text-sm font-medium text-orange-400">Generazione in corso...</span>
+                </div>
+                <div className="flex space-x-1 mt-2">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                </div>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
         </div>
-      </nav>
 
-      <main className="dash-main">
-        {activeTab === 'generate' ? (
-          <GeneratorPanel
-            onGenerate={handleNewGeneration}
-            isGenerating={isGenerating}
-            setIsGenerating={setIsGenerating}
-            formData={formData}
-            setFormData={setFormData}
-          />
-        ) : (
-          <Gallery images={generations} />
-        )}
-      </main>
+        {/* Input Area */}
+        <div className="p-4 border-t border-orange-500/20 bg-black/30 backdrop-blur-sm">
+          {referenceImage && (
+            <div className="mb-3 p-2 bg-gray-800 rounded-lg border border-orange-500/20">
+              <div className="flex items-center space-x-2">
+                <img src={referenceImage} alt="Reference" className="w-12 h-12 object-cover rounded" />
+                <span className="text-sm text-gray-300">Reference image loaded</span>
+                <button
+                  onClick={() => setReferenceImage(null)}
+                  className="text-red-400 hover:text-red-300 ml-auto"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
 
-      <style jsx>{`
-        .dashboard {
-          min-height: 100vh;
-          background: #0a0a0a;
-          color: white;
-        }
+          <form onSubmit={handleSubmit} className="flex space-x-3">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-xl transition-colors"
+            >
+              📎
+            </button>
 
-        .dash-nav {
-          background: rgba(255, 255, 255, 0.05);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          padding: 1rem 2rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              accept="image/*"
+              className="hidden"
+            />
 
-        .dash-logo {
-          font-size: 1.5rem;
-          font-weight: 800;
-        }
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Inserisci URL e descrivi il design che vuoi..."
+                className="w-full bg-gray-800 text-white border border-orange-500/20 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 placeholder-gray-400"
+                disabled={isGenerating}
+              />
+            </div>
 
-        .nav-tabs {
-          display: flex;
-          gap: 1rem;
-        }
+            <button
+              type="submit"
+              disabled={!input.trim() || isGenerating}
+              className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-6 py-3 rounded-xl font-medium hover:from-orange-700 hover:to-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGenerating ? '⚡' : '🚀'}
+            </button>
+          </form>
 
-        .nav-tabs button {
-          background: transparent;
-          color: #666;
-          border: none;
-          padding: 0.75rem 1.5rem;
-          border-radius: 0.5rem;
-          cursor: pointer;
-          font-weight: 600;
-          transition: all 0.2s;
-        }
-
-        .nav-tabs button:hover {
-          color: #999;
-        }
-
-        .nav-tabs button.active {
-          background: linear-gradient(135deg, #ff6b35 0%, #ff3b00 100%);
-          color: white;
-        }
-
-        .user-menu {
-          background: rgba(255, 107, 53, 0.1);
-          padding: 0.5rem 1rem;
-          border-radius: 0.5rem;
-          border: 1px solid rgba(255, 107, 53, 0.3);
-        }
-
-        .dash-main {
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: 2rem;
-        }
-      `}</style>
+          <div className="text-xs text-gray-500 mt-2 text-center">
+            Carica un'immagine reference e descrivi il QR code che vuoi creare
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

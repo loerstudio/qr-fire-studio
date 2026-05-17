@@ -53,6 +53,141 @@ export default function GeneratorPanel({ onGenerate, isGenerating, setIsGenerati
     return () => window.removeEventListener('editImage', handleEditImage)
   }, [])
 
+  // Compose images using browser Canvas
+  const composeImageInBrowser = async (aiImageUrl, qrCodeDataUrl) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 1024
+      canvas.height = 1024
+      const ctx = canvas.getContext('2d')
+
+      // Load and draw AI background
+      const aiImg = new Image()
+      aiImg.crossOrigin = 'anonymous'
+      aiImg.onload = () => {
+        ctx.drawImage(aiImg, 0, 0, 1024, 1024)
+
+        // Add professional text overlay
+        addTextOverlay(ctx)
+
+        // Load and draw QR code
+        const qrImg = new Image()
+        qrImg.onload = () => {
+          // Draw QR with border
+          const qrSize = 280
+          const qrX = 370
+          const qrY = 420
+
+          // White background
+          ctx.fillStyle = '#FFFFFF'
+          ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20)
+
+          // Brown border
+          ctx.strokeStyle = '#8B4513'
+          ctx.lineWidth = 10
+          ctx.strokeRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20)
+
+          // QR code
+          ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
+
+          resolve(canvas.toDataURL('image/jpeg', 0.95))
+        }
+        qrImg.src = qrCodeDataUrl
+      }
+
+      if (aiImageUrl) {
+        aiImg.src = aiImageUrl
+      } else {
+        // Demo mode - gradient background
+        const gradient = ctx.createLinearGradient(0, 0, 1024, 1024)
+        gradient.addColorStop(0, '#FF6B35')
+        gradient.addColorStop(1, '#FF3B00')
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, 0, 1024, 1024)
+
+        // Demo text
+        ctx.fillStyle = '#FFD700'
+        ctx.font = 'bold 72px Arial'
+        ctx.textAlign = 'center'
+        ctx.fillText('DEMO MODE', 512, 200)
+        ctx.font = 'bold 48px Arial'
+        ctx.fillText('Add FAL_API_KEY', 512, 280)
+
+        aiImg.onload() // Trigger QR loading
+      }
+    })
+  }
+
+  // Add professional text overlay
+  const addTextOverlay = (ctx) => {
+    // Dark overlay for text visibility
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
+    ctx.fillRect(0, 0, 1024, 400)
+
+    // Golden gradient text
+    const goldGradient = ctx.createLinearGradient(0, 0, 0, 300)
+    goldGradient.addColorStop(0, '#FFD700')
+    goldGradient.addColorStop(0.5, '#FFA500')
+    goldGradient.addColorStop(1, '#FF8C00')
+
+    // Top text
+    ctx.fillStyle = goldGradient
+    ctx.strokeStyle = '#000000'
+    ctx.lineWidth = 3
+    ctx.font = 'bold 72px Arial'
+    ctx.textAlign = 'start'
+
+    const topLine1 = "Parli di"
+    const topLine2 = "SALUTE"
+    const topLine3 = "DI FERRO?"
+
+    ctx.strokeText(topLine1, 50, 100)
+    ctx.fillText(topLine1, 50, 100)
+
+    ctx.font = 'bold 90px Arial'
+    ctx.strokeText(topLine2, 50, 180)
+    ctx.fillText(topLine2, 50, 180)
+
+    ctx.strokeText(topLine3, 50, 270)
+    ctx.fillText(topLine3, 50, 270)
+
+    // Bottom text
+    ctx.font = 'bold 48px Arial'
+    ctx.fillStyle = '#FFFFFF'
+
+    const bottomLine1 = "SCANNA."
+    const bottomLine2 = "TRASFORMA."
+    const bottomLine3 = "VIVI."
+
+    ctx.strokeText(bottomLine1, 50, 720)
+    ctx.fillText(bottomLine1, 50, 720)
+
+    const fireGradient = ctx.createLinearGradient(0, 750, 0, 800)
+    fireGradient.addColorStop(0, '#FF6B35')
+    fireGradient.addColorStop(1, '#FF3D00')
+    ctx.fillStyle = fireGradient
+    ctx.strokeText(bottomLine2, 50, 780)
+    ctx.fillText(bottomLine2, 50, 780)
+
+    ctx.fillStyle = '#FFFFFF'
+    ctx.strokeText(bottomLine3, 50, 840)
+    ctx.fillText(bottomLine3, 50, 840)
+
+    // SCAN QUI center
+    ctx.font = 'bold 86px Arial'
+    ctx.textAlign = 'center'
+    ctx.strokeText("SCAN QUI", 512, 720)
+    ctx.fillText("SCAN QUI", 512, 720)
+
+    // Website URL
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
+    ctx.fillRect(30, 880, 250, 50)
+    ctx.font = '24px Arial'
+    ctx.fillStyle = '#FFFFFF'
+    ctx.textAlign = 'center'
+    ctx.fillText('🌐 salutediferro.com', 155, 912)
+  }
+
   const handleGenerate = async () => {
     if (!url.trim()) return
 
@@ -96,10 +231,13 @@ export default function GeneratorPanel({ onGenerate, isGenerating, setIsGenerati
 
       if (data.error) throw new Error(data.error)
 
+      // Compose images in frontend using Canvas
+      const finalImageUrl = await composeImageInBrowser(data.aiImageUrl, data.qrCodeDataUrl)
+
       const newImage = {
         id: Date.now(),
-        url: data.imageUrl,
-        qrUrl: data.qrUrl, // Use the actual QR URL from API
+        url: finalImageUrl,
+        qrUrl: data.qrUrl,
         style: style,
         createdAt: new Date().toISOString()
       }
