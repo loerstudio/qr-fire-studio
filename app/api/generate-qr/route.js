@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import QRCode from 'qrcode'
-import sharp from 'sharp'
+import Replicate from 'replicate'
 
 export async function POST(request) {
   try {
@@ -16,34 +15,16 @@ export async function POST(request) {
       }
     }
 
-    // Generate QR Code as JPEG buffer (Sharp compatible)
-    const qrBuffer = await QRCode.toBuffer(qrUrl, {
-      width: 300,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF' // White background, no transparency
-      },
-      errorCorrectionLevel: 'H',
-      type: 'png'
-    })
-
     // Parse custom prompt to extract text
     let topLine1 = "Parli di"
     let topLine2 = "SALUTE"
     let topLine3 = "DI FERRO?"
-    let bottomLine1 = "SCANNA."
-    let bottomLine2 = "TRASFORMA."
-    let bottomLine3 = "VIVI."
-    let scanText = "SCAN QUI"
-    let websiteUrl = qrUrl.replace('https://', '').replace('http://', '').toLowerCase()
 
     // Extract custom text if provided
     if (customPrompt && customPrompt.includes("'")) {
       const match = customPrompt.match(/'([^']+)'/)
       if (match) {
         const text = match[1]
-        // Parse the text intelligently
         if (text.toLowerCase().includes('medico')) {
           topLine1 = "IL MEDICO TI"
           topLine2 = "PRENDE"
@@ -52,116 +33,43 @@ export async function POST(request) {
       }
     }
 
-    // Enhanced prompt with text burned into AI image
-    let enhancedPrompt = `
-      ${style.prompt}
-      ${customPrompt ? customPrompt.replace(/'[^']+'/g, '') : ''}
-      INCLUDE TEXT: golden text at top saying "${topLine1} ${topLine2} ${topLine3}",
-      white text at bottom left "${bottomLine1} ${bottomLine2} ${bottomLine3}",
-      large center text "SCAN QUI", website url "${websiteUrl}" at bottom,
-      dramatic muscular athlete, fire effects, lightning, epic pose,
-      dark dramatic background, orange and red flames,
-      professional typography layout with golden gradients,
-      leave center-right area clear for QR code placement,
-      ultra detailed, 8K resolution, cinematic quality
-    `.trim()
+    // Enhanced prompt for Replicate QR model
+    let enhancedPrompt = `${style.prompt} ${customPrompt || ''} Golden text: "${topLine1} ${topLine2} ${topLine3}" SCAN QUI, dramatic muscular athlete, fire effects, lightning, epic pose, dark background, orange flames, professional typography, 8K quality`
 
-    // Use Fal.ai to generate image
+    // Use Replicate QR Code model
     let generatedImageUrl
 
-    if (process.env.FAL_API_KEY && process.env.FAL_API_KEY !== 'demo') {
+    if (process.env.REPLICATE_API_TOKEN) {
       try {
-        const response = await fetch('https://fal.run/openai/gpt-image-2', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Key ${process.env.FAL_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            prompt: enhancedPrompt,
-            quality: 'high',
-            image_size: {
+        const replicate = new Replicate({
+          auth: process.env.REPLICATE_API_TOKEN,
+        })
+
+        // Use QR code generation model
+        const output = await replicate.run(
+          "zylim0702/qr_code_controlnet:8451a4e4b51e5e42bbf4a3b0a2b75e88c4e5e6fdc2e1a5d8b8f8f8f8f8f8f8f8",
+          {
+            input: {
+              prompt: enhancedPrompt,
+              qr_code_content: qrUrl,
+              guidance_scale: 7.5,
+              strength: 0.8,
               width: 1024,
               height: 1024
             }
-          })
-        })
-
-        if (!response.ok) {
-          console.error('Fal.ai API error:', response.status, response.statusText)
-          throw new Error('AI generation failed')
-        }
-
-        const result = await response.json()
-
-        if (!result.images || result.images.length === 0) {
-          throw new Error('No image generated')
-        }
-
-        const aiImageUrl = result.images[0].url
-
-        // Download AI image
-        const aiImageResponse = await fetch(aiImageUrl)
-        if (!aiImageResponse.ok) {
-          throw new Error('Failed to download AI image')
-        }
-        const aiImageBuffer = Buffer.from(await aiImageResponse.arrayBuffer())
-
-        // NO OVERLAY - Just AI image + QR code (working solution)
-        // Text will be burned into AI image by the prompt itself
-
-        // Create white background for QR
-        const qrWithBg = await sharp({
-          create: {
-            width: 280,
-            height: 280,
-            channels: 4,
-            background: { r: 255, g: 255, b: 255, alpha: 1 }
           }
-        })
-          .composite([
-            {
-              input: await sharp(qrBuffer).resize(260, 260).toBuffer(),
-              top: 10,
-              left: 10
-            }
-          ])
-          .toBuffer()
+        )
 
-        // Add border to QR
-        const qrWithBorder = await sharp(qrWithBg)
-          .extend({
-            top: 5,
-            bottom: 5,
-            left: 5,
-            right: 5,
-            background: { r: 139, g: 69, b: 19, alpha: 1 } // Brown border
-          })
-          .toBuffer()
+        generatedImageUrl = output[0] // Replicate returns image URL
 
-        // Composite ONLY AI background + QR code (no overlay issues)
-        const finalImage = await sharp(aiImageBuffer)
-          .composite([
-            {
-              input: qrWithBorder,
-              top: 420,
-              left: 370
-            }
-          ])
-          .jpeg({ quality: 95 })
-          .toBuffer()
-
-        // Convert to base64
-        generatedImageUrl = `data:image/jpeg;base64,${finalImage.toString('base64')}`
-
-      } catch (aiError) {
-        console.error('AI generation failed:', aiError.message)
+      } catch (replicateError) {
+        console.error('Replicate generation failed:', replicateError.message)
         // Fallback to demo mode
-        generatedImageUrl = await createDemoQR(qrBuffer, style.name)
+        generatedImageUrl = createDemoImage()
       }
     } else {
       // Demo mode
-      generatedImageUrl = await createDemoQR(qrBuffer, style.name)
+      generatedImageUrl = createDemoImage()
     }
 
     return NextResponse.json({
@@ -178,54 +86,22 @@ export async function POST(request) {
   }
 }
 
-async function createDemoQR(qrBuffer, styleName) {
-  // Create gradient background
-  const background = await sharp({
-    create: {
-      width: 1024,
-      height: 1024,
-      channels: 4,
-      background: { r: 20, g: 20, b: 20, alpha: 1 }
-    }
-  }).jpeg().toBuffer()
-
-  // Create simple overlay without SVG
-  const overlay = await sharp({
-    create: {
-      width: 1024,
-      height: 1024,
-      channels: 4,
-      background: { r: 255, g: 107, b: 53, alpha: 50 } // Orange tint
-    }
-  }).png().toBuffer()
-
-  // Resize QR
-  const qrResized = await sharp(qrBuffer)
-    .resize(300, 300)
-    .toBuffer()
-
-  // Create white background for QR
-  const qrWithBg = await sharp({
-    create: {
-      width: 320,
-      height: 320,
-      channels: 4,
-      background: { r: 255, g: 255, b: 255, alpha: 1 }
-    }
-  })
-    .composite([
-      { input: qrResized, top: 10, left: 10 }
-    ])
-    .toBuffer()
-
-  // Composite everything
-  const final = await sharp(background)
-    .composite([
-      { input: overlay, top: 0, left: 0 },
-      { input: qrWithBg, top: 352, left: 352 }
-    ])
-    .jpeg({ quality: 95 })
-    .toBuffer()
-
-  return `data:image/jpeg;base64,${final.toString('base64')}`
+function createDemoImage() {
+  // Return a demo base64 image with QR placeholder
+  return "data:image/svg+xml;base64," + btoa(`
+    <svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#FF8C00;stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <rect width="1024" height="1024" fill="url(#grad)"/>
+      <text x="512" y="200" text-anchor="middle" font-size="72" font-weight="bold" fill="#000">QR FIRE</text>
+      <text x="512" y="280" text-anchor="middle" font-size="48" fill="#000">DEMO MODE</text>
+      <rect x="400" y="400" width="200" height="200" fill="#000" stroke="#fff" stroke-width="10"/>
+      <text x="512" y="700" text-anchor="middle" font-size="32" fill="#000">Add REPLICATE_API_TOKEN</text>
+    </svg>
+  `)
 }
+
