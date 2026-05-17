@@ -16,15 +16,16 @@ export async function POST(request) {
       }
     }
 
-    // Generate QR Code as buffer with transparent background
+    // Generate QR Code as JPEG buffer (Sharp compatible)
     const qrBuffer = await QRCode.toBuffer(qrUrl, {
       width: 300,
       margin: 2,
       color: {
         dark: '#000000',
-        light: '#FFFFFF00' // Transparent background
+        light: '#FFFFFF' // White background, no transparency
       },
-      errorCorrectionLevel: 'H'
+      errorCorrectionLevel: 'H',
+      type: 'png'
     })
 
     // Parse custom prompt to extract text
