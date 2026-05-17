@@ -8,6 +8,12 @@ export default function Dashboard() {
   const [generations, setGenerations] = useState([])
   const [activeTab, setActiveTab] = useState('generate')
   const [isGenerating, setIsGenerating] = useState(false)
+  // Form state persisted at dashboard level
+  const [formData, setFormData] = useState({
+    url: '',
+    style: 'fitness',
+    customPrompt: ''
+  })
 
   // Load saved images from localStorage on mount
   useEffect(() => {
@@ -95,6 +101,8 @@ export default function Dashboard() {
             onGenerate={handleNewGeneration}
             isGenerating={isGenerating}
             setIsGenerating={setIsGenerating}
+            formData={formData}
+            setFormData={setFormData}
           />
         ) : (
           <Gallery images={generations} />

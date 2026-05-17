@@ -29,20 +29,24 @@ const STYLES = {
   }
 }
 
-export default function GeneratorPanel({ onGenerate, isGenerating, setIsGenerating }) {
-  const [url, setUrl] = useState('')
-  const [style, setStyle] = useState('fitness')
-  const [customPrompt, setCustomPrompt] = useState('')
+export default function GeneratorPanel({ onGenerate, isGenerating, setIsGenerating, formData, setFormData }) {
+  const { url, style, customPrompt } = formData
   const [editingImage, setEditingImage] = useState(null)
+
+  const updateFormData = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
 
   // Listen for edit events from Gallery
   useEffect(() => {
     const handleEditImage = (event) => {
       const image = event.detail
       setEditingImage(image)
-      setUrl(image.qrUrl)
-      setStyle(image.style)
-      setCustomPrompt('') // Reset for new edit
+      setFormData({
+        url: image.qrUrl,
+        style: image.style,
+        customPrompt: ''
+      })
     }
 
     window.addEventListener('editImage', handleEditImage)
@@ -58,18 +62,23 @@ export default function GeneratorPanel({ onGenerate, isGenerating, setIsGenerati
       // Correct any typos in custom prompt
       let correctedPrompt = customPrompt
       if (customPrompt) {
-        const correctResponse = await fetch('/api/correct-text', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: customPrompt })
-        })
+        try {
+          const correctResponse = await fetch('/api/correct-text', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: customPrompt })
+          })
 
-        if (correctResponse.ok) {
-          const { correctedText, hadErrors } = await correctResponse.json()
-          correctedPrompt = correctedText
-          if (hadErrors) {
-            console.log('Auto-corrected text:', customPrompt, '→', correctedText)
+          if (correctResponse.ok) {
+            const { correctedText, hadErrors } = await correctResponse.json()
+            correctedPrompt = correctedText
+            if (hadErrors) {
+              console.log('Auto-corrected text:', customPrompt, '→', correctedText)
+            }
           }
+        } catch (error) {
+          console.log('Text correction skipped:', error.message)
+          // Continue with original prompt if correction fails
         }
       }
 
@@ -102,8 +111,7 @@ export default function GeneratorPanel({ onGenerate, isGenerating, setIsGenerati
       onGenerate(newImage)
 
       // Reset form
-      setUrl('')
-      setCustomPrompt('')
+      setFormData({ url: '', style: 'fitness', customPrompt: '' })
       setEditingImage(null) // Clear edit mode
     } catch (error) {
       console.error('Generation error:', error)
@@ -121,7 +129,10 @@ export default function GeneratorPanel({ onGenerate, isGenerating, setIsGenerati
         <p>{editingImage ? 'Modifica il prompt per rigenerare con Claude AI' : 'Crea grafiche stunning con QR code integrato'}</p>
         {editingImage && (
           <button
-            onClick={() => { setEditingImage(null); setUrl(''); setCustomPrompt(''); }}
+            onClick={() => {
+              setEditingImage(null);
+              setFormData({ url: '', style: 'fitness', customPrompt: '' });
+            }}
             className="cancel-edit"
           >
             ← Torna alla creazione
@@ -136,7 +147,7 @@ export default function GeneratorPanel({ onGenerate, isGenerating, setIsGenerati
             type="text"
             placeholder="https://tuosito.com o @tuosocial"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => updateFormData('url', e.target.value)}
           />
         </div>
 
@@ -147,7 +158,7 @@ export default function GeneratorPanel({ onGenerate, isGenerating, setIsGenerati
               <button
                 key={key}
                 className={`style-option ${style === key ? 'active' : ''}`}
-                onClick={() => setStyle(key)}
+                onClick={() => updateFormData('style', key)}
               >
                 {value.name}
               </button>
@@ -160,7 +171,7 @@ export default function GeneratorPanel({ onGenerate, isGenerating, setIsGenerati
           <textarea
             placeholder="Aggiungi dettagli specifici... es: colori rosso e oro, stile minimalista"
             value={customPrompt}
-            onChange={(e) => setCustomPrompt(e.target.value)}
+            onChange={(e) => updateFormData('customPrompt', e.target.value)}
             rows={3}
           />
         </div>
