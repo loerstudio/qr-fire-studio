@@ -104,23 +104,17 @@ export async function POST(request) {
         const aiImageBuffer = Buffer.from(await aiImageResponse.arrayBuffer())
 
         // Create professional text overlay with gradient effects
-        const textOverlay = Buffer.from(`
-          <svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
+        const svgString = `<svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <!-- Golden gradient for main text -->
               <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
                 <stop offset="50%" style="stop-color:#FFA500;stop-opacity:1" />
                 <stop offset="100%" style="stop-color:#FF8C00;stop-opacity:1" />
               </linearGradient>
-
-              <!-- Fire gradient -->
               <linearGradient id="fireGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" style="stop-color:#FF6B35;stop-opacity:1" />
                 <stop offset="100%" style="stop-color:#FF3D00;stop-opacity:1" />
               </linearGradient>
-
-              <!-- Text shadow effect -->
               <filter id="textShadow">
                 <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
                 <feOffset dx="3" dy="3" result="offsetblur"/>
@@ -132,11 +126,7 @@ export async function POST(request) {
                 </feMerge>
               </filter>
             </defs>
-
-            <!-- Dark overlay for better text visibility -->
             <rect width="1024" height="400" fill="black" opacity="0.3"/>
-
-            <!-- TOP TEXT GROUP -->
             <g filter="url(#textShadow)">
               <text x="50" y="100" font-family="Arial Black, sans-serif" font-size="72" font-weight="900" fill="url(#goldGradient)" text-anchor="start">
                 ${topLine1}
@@ -148,10 +138,7 @@ export async function POST(request) {
                 ${topLine3}
               </text>
             </g>
-
-            <!-- BOTTOM TEXT GROUP -->
             <g filter="url(#textShadow)">
-              <!-- Left side text -->
               <text x="50" y="720" font-family="Arial, sans-serif" font-size="48" font-weight="700" fill="white" text-anchor="start">
                 ${bottomLine1}
               </text>
@@ -161,22 +148,16 @@ export async function POST(request) {
               <text x="50" y="840" font-family="Arial, sans-serif" font-size="48" font-weight="700" fill="white" text-anchor="start">
                 ${bottomLine3}
               </text>
-
-              <!-- SCAN QUI text -->
               <text x="512" y="720" font-family="Arial Black, sans-serif" font-size="86" font-weight="900" fill="white" text-anchor="middle">
                 ${scanText}
               </text>
             </g>
-
-            <!-- Website URL -->
             <g>
               <rect x="30" y="880" width="250" height="50" rx="25" fill="black" opacity="0.6"/>
               <text x="155" y="912" font-family="Arial, sans-serif" font-size="24" fill="white" text-anchor="middle">
                 🌐 ${websiteUrl}
               </text>
             </g>
-
-            <!-- Bottom icons placeholders -->
             <g opacity="0.8">
               <text x="80" y="980" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">
                 SALUTE
@@ -184,14 +165,12 @@ export async function POST(request) {
               <text x="80" y="995" font-family="Arial, sans-serif" font-size="12" fill="#888" text-anchor="middle">
                 OTTIMALE
               </text>
-
               <text x="200" y="980" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">
                 PERFORMANCE
               </text>
               <text x="200" y="995" font-family="Arial, sans-serif" font-size="12" fill="#888" text-anchor="middle">
                 MASSIME
               </text>
-
               <text x="320" y="980" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">
                 LONGEVITÀ
               </text>
@@ -199,8 +178,12 @@ export async function POST(request) {
                 REALE
               </text>
             </g>
-          </svg>
-        `)
+          </svg>`
+
+        // Convert SVG to buffer for Sharp
+        const textOverlay = await sharp(Buffer.from(svgString))
+          .png()
+          .toBuffer()
 
         // Create white background for QR
         const qrWithBg = await sharp({
@@ -287,15 +270,13 @@ async function createDemoQR(qrBuffer, styleName) {
   }).jpeg().toBuffer()
 
   // Create demo text overlay
-  const textOverlay = Buffer.from(`
-    <svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
+  const demoSvgString = `<svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="demoGradient" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
           <stop offset="100%" style="stop-color:#FF8C00;stop-opacity:1" />
         </linearGradient>
       </defs>
-
       <text x="512" y="200" font-family="Arial Black" font-size="72" fill="url(#demoGradient)" text-anchor="middle">
         QR FIRE
       </text>
@@ -305,8 +286,12 @@ async function createDemoQR(qrBuffer, styleName) {
       <text x="512" y="800" font-family="Arial" font-size="32" fill="white" text-anchor="middle">
         DEMO MODE
       </text>
-    </svg>
-  `)
+    </svg>`
+
+  // Convert SVG to buffer for Sharp
+  const textOverlay = await sharp(Buffer.from(demoSvgString))
+    .png()
+    .toBuffer()
 
   // Resize QR
   const qrResized = await sharp(qrBuffer)
