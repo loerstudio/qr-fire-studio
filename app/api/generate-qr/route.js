@@ -126,24 +126,24 @@ async function overlayQRCode(backgroundUrl, qrDataUrl) {
     const background = await loadImage(backgroundUrl)
     ctx.drawImage(background, 0, 0, 1024, 1024)
 
-    // QR positioning - bottom center, proportionate
-    const qrSize = 180  // Proportionate size
+    // QR positioning - bottom center, smaller to not interfere with text
+    const qrSize = 150  // Smaller size to not cover text
     const qrX = (1024 - qrSize) / 2  // Centered horizontally
-    const qrY = 1024 - qrSize - 80  // Bottom with margin
+    const qrY = 1024 - qrSize - 40  // Very bottom with small margin
 
-    // Create semi-transparent dark background
+    // Create compact semi-transparent dark background
     ctx.fillStyle = 'rgba(0, 0, 0, 0.75)'
     ctx.beginPath()
-    ctx.roundRect(qrX - 20, qrY - 55, qrSize + 40, qrSize + 75, 15)
+    ctx.roundRect(qrX - 15, qrY - 45, qrSize + 30, qrSize + 60, 12)
     ctx.fill()
 
-    // Add "SCAN QUI" text above QR
+    // Add "SCAN QUI" text above QR (smaller)
     ctx.fillStyle = '#ff6b35'  // Orange color
-    ctx.font = 'bold 24px Arial'
+    ctx.font = 'bold 20px Arial'
     ctx.textAlign = 'center'
     ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
     ctx.shadowBlur = 5
-    ctx.fillText('SCAN QUI', qrX + qrSize/2, qrY - 15)
+    ctx.fillText('SCAN QUI', qrX + qrSize/2, qrY - 12)
     ctx.shadowBlur = 0
 
     // Orange glow effect around QR

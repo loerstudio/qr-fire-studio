@@ -87,13 +87,19 @@ export default function GeneratorPanel({ onGenerate }) {
 
       if (data.error) throw new Error(data.error)
 
-      onGenerate({
+      const newImage = {
         id: Date.now(),
         url: data.imageUrl,
         qrUrl: data.qrUrl, // Use the actual QR URL from API
         style: style,
         createdAt: new Date().toISOString()
-      })
+      }
+
+      // Save immediately to localStorage so it persists
+      const existing = JSON.parse(localStorage.getItem('qr-fire-gallery') || '[]')
+      localStorage.setItem('qr-fire-gallery', JSON.stringify([newImage, ...existing].slice(0, 50)))
+
+      onGenerate(newImage)
 
       // Reset form
       setUrl('')
