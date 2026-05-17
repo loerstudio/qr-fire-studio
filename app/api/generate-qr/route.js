@@ -103,87 +103,15 @@ export async function POST(request) {
         }
         const aiImageBuffer = Buffer.from(await aiImageResponse.arrayBuffer())
 
-        // Create professional text overlay with gradient effects
-        const svgString = `<svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
-                <stop offset="50%" style="stop-color:#FFA500;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#FF8C00;stop-opacity:1" />
-              </linearGradient>
-              <linearGradient id="fireGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style="stop-color:#FF6B35;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#FF3D00;stop-opacity:1" />
-              </linearGradient>
-              <filter id="textShadow">
-                <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
-                <feOffset dx="3" dy="3" result="offsetblur"/>
-                <feFlood flood-color="#000000" flood-opacity="0.8"/>
-                <feComposite in2="offsetblur" operator="in"/>
-                <feMerge>
-                  <feMergeNode/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-            </defs>
-            <rect width="1024" height="400" fill="black" opacity="0.3"/>
-            <g filter="url(#textShadow)">
-              <text x="50" y="100" font-family="Arial Black, sans-serif" font-size="72" font-weight="900" fill="url(#goldGradient)" text-anchor="start">
-                ${topLine1}
-              </text>
-              <text x="50" y="180" font-family="Arial Black, sans-serif" font-size="90" font-weight="900" fill="url(#goldGradient)" text-anchor="start">
-                ${topLine2}
-              </text>
-              <text x="50" y="270" font-family="Arial Black, sans-serif" font-size="90" font-weight="900" fill="url(#goldGradient)" text-anchor="start">
-                ${topLine3}
-              </text>
-            </g>
-            <g filter="url(#textShadow)">
-              <text x="50" y="720" font-family="Arial, sans-serif" font-size="48" font-weight="700" fill="white" text-anchor="start">
-                ${bottomLine1}
-              </text>
-              <text x="50" y="780" font-family="Arial, sans-serif" font-size="48" font-weight="700" fill="url(#fireGradient)" text-anchor="start">
-                ${bottomLine2}
-              </text>
-              <text x="50" y="840" font-family="Arial, sans-serif" font-size="48" font-weight="700" fill="white" text-anchor="start">
-                ${bottomLine3}
-              </text>
-              <text x="512" y="720" font-family="Arial Black, sans-serif" font-size="86" font-weight="900" fill="white" text-anchor="middle">
-                ${scanText}
-              </text>
-            </g>
-            <g>
-              <rect x="30" y="880" width="250" height="50" rx="25" fill="black" opacity="0.6"/>
-              <text x="155" y="912" font-family="Arial, sans-serif" font-size="24" fill="white" text-anchor="middle">
-                🌐 ${websiteUrl}
-              </text>
-            </g>
-            <g opacity="0.8">
-              <text x="80" y="980" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">
-                SALUTE
-              </text>
-              <text x="80" y="995" font-family="Arial, sans-serif" font-size="12" fill="#888" text-anchor="middle">
-                OTTIMALE
-              </text>
-              <text x="200" y="980" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">
-                PERFORMANCE
-              </text>
-              <text x="200" y="995" font-family="Arial, sans-serif" font-size="12" fill="#888" text-anchor="middle">
-                MASSIME
-              </text>
-              <text x="320" y="980" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">
-                LONGEVITÀ
-              </text>
-              <text x="320" y="995" font-family="Arial, sans-serif" font-size="12" fill="#888" text-anchor="middle">
-                REALE
-              </text>
-            </g>
-          </svg>`
-
-        // Convert SVG to buffer for Sharp
-        const textOverlay = await sharp(Buffer.from(svgString))
-          .png()
-          .toBuffer()
+        // Create dark overlay for better text visibility
+        const darkOverlay = await sharp({
+          create: {
+            width: 1024,
+            height: 400,
+            channels: 4,
+            background: { r: 0, g: 0, b: 0, alpha: 76 } // 30% opacity = 76/255
+          }
+        }).png().toBuffer()
 
         // Create white background for QR
         const qrWithBg = await sharp({
@@ -214,11 +142,11 @@ export async function POST(request) {
           })
           .toBuffer()
 
-        // Composite everything
+        // Composite everything (AI background + dark overlay + QR code only)
         const finalImage = await sharp(aiImageBuffer)
           .composite([
             {
-              input: textOverlay,
+              input: darkOverlay,
               top: 0,
               left: 0
             },
@@ -269,29 +197,15 @@ async function createDemoQR(qrBuffer, styleName) {
     }
   }).jpeg().toBuffer()
 
-  // Create demo text overlay
-  const demoSvgString = `<svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="demoGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
-          <stop offset="100%" style="stop-color:#FF8C00;stop-opacity:1" />
-        </linearGradient>
-      </defs>
-      <text x="512" y="200" font-family="Arial Black" font-size="72" fill="url(#demoGradient)" text-anchor="middle">
-        QR FIRE
-      </text>
-      <text x="512" y="280" font-family="Arial Black" font-size="72" fill="url(#demoGradient)" text-anchor="middle">
-        STUDIO
-      </text>
-      <text x="512" y="800" font-family="Arial" font-size="32" fill="white" text-anchor="middle">
-        DEMO MODE
-      </text>
-    </svg>`
-
-  // Convert SVG to buffer for Sharp
-  const textOverlay = await sharp(Buffer.from(demoSvgString))
-    .png()
-    .toBuffer()
+  // Create simple overlay without SVG
+  const overlay = await sharp({
+    create: {
+      width: 1024,
+      height: 1024,
+      channels: 4,
+      background: { r: 255, g: 107, b: 53, alpha: 50 } // Orange tint
+    }
+  }).png().toBuffer()
 
   // Resize QR
   const qrResized = await sharp(qrBuffer)
@@ -315,7 +229,7 @@ async function createDemoQR(qrBuffer, styleName) {
   // Composite everything
   const final = await sharp(background)
     .composite([
-      { input: textOverlay, top: 0, left: 0 },
+      { input: overlay, top: 0, left: 0 },
       { input: qrWithBg, top: 352, left: 352 }
     ])
     .jpeg({ quality: 95 })
