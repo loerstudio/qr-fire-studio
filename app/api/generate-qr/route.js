@@ -103,15 +103,82 @@ export async function POST(request) {
         }
         const aiImageBuffer = Buffer.from(await aiImageResponse.arrayBuffer())
 
-        // Create dark overlay for better text visibility
-        const darkOverlay = await sharp({
-          create: {
-            width: 1024,
-            height: 400,
-            channels: 4,
-            background: { r: 0, g: 0, b: 0, alpha: 76 } // 30% opacity = 76/255
-          }
-        }).png().toBuffer()
+        // Create professional text overlay with Canvas
+        const { createCanvas } = require('canvas')
+        const canvas = createCanvas(1024, 1024)
+        const ctx = canvas.getContext('2d')
+
+        // Dark overlay for text visibility
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
+        ctx.fillRect(0, 0, 1024, 400)
+
+        // Golden gradient for main text
+        const goldGradient = ctx.createLinearGradient(0, 0, 0, 300)
+        goldGradient.addColorStop(0, '#FFD700')
+        goldGradient.addColorStop(0.5, '#FFA500')
+        goldGradient.addColorStop(1, '#FF8C00')
+
+        // Top text - EXACTLY like your template
+        ctx.fillStyle = goldGradient
+        ctx.strokeStyle = '#000000'
+        ctx.lineWidth = 3
+        ctx.font = 'bold 72px Arial Black'
+        ctx.strokeText(topLine1, 50, 100)
+        ctx.fillText(topLine1, 50, 100)
+
+        ctx.font = 'bold 90px Arial Black'
+        ctx.strokeText(topLine2, 50, 180)
+        ctx.fillText(topLine2, 50, 180)
+
+        ctx.strokeText(topLine3, 50, 270)
+        ctx.fillText(topLine3, 50, 270)
+
+        // Bottom left text
+        ctx.font = 'bold 48px Arial'
+        ctx.fillStyle = '#FFFFFF'
+        ctx.strokeText(bottomLine1, 50, 720)
+        ctx.fillText(bottomLine1, 50, 720)
+
+        // Fire gradient for TRASFORMA
+        const fireGradient = ctx.createLinearGradient(0, 750, 0, 800)
+        fireGradient.addColorStop(0, '#FF6B35')
+        fireGradient.addColorStop(1, '#FF3D00')
+        ctx.fillStyle = fireGradient
+        ctx.strokeText(bottomLine2, 50, 780)
+        ctx.fillText(bottomLine2, 50, 780)
+
+        ctx.fillStyle = '#FFFFFF'
+        ctx.strokeText(bottomLine3, 50, 840)
+        ctx.fillText(bottomLine3, 50, 840)
+
+        // SCAN QUI - center
+        ctx.font = 'bold 86px Arial Black'
+        ctx.textAlign = 'center'
+        ctx.strokeText(scanText, 512, 720)
+        ctx.fillText(scanText, 512, 720)
+
+        // Website URL
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
+        ctx.fillRect(30, 880, 250, 50)
+        ctx.font = '24px Arial'
+        ctx.fillStyle = '#FFFFFF'
+        ctx.textAlign = 'center'
+        ctx.fillText(`🌐 ${websiteUrl}`, 155, 912)
+
+        // Bottom icons
+        ctx.font = '14px Arial'
+        ctx.fillStyle = '#FFFFFF'
+        ctx.fillText('SALUTE', 80, 980)
+        ctx.fillText('PERFORMANCE', 200, 980)
+        ctx.fillText('LONGEVITÀ', 320, 980)
+
+        ctx.font = '12px Arial'
+        ctx.fillStyle = '#888888'
+        ctx.fillText('OTTIMALE', 80, 995)
+        ctx.fillText('MASSIME', 200, 995)
+        ctx.fillText('REALE', 320, 995)
+
+        const textOverlay = canvas.toBuffer('image/png')
 
         // Create white background for QR
         const qrWithBg = await sharp({
@@ -142,11 +209,11 @@ export async function POST(request) {
           })
           .toBuffer()
 
-        // Composite everything (AI background + dark overlay + QR code only)
+        // Composite everything (AI background + text overlay + QR code)
         const finalImage = await sharp(aiImageBuffer)
           .composite([
             {
-              input: darkOverlay,
+              input: textOverlay,
               top: 0,
               left: 0
             },
