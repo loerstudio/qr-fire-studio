@@ -72,7 +72,7 @@ export default function GeneratorPanel({ onGenerate }) {
       onGenerate({
         id: Date.now(),
         url: data.imageUrl,
-        qrUrl: url,
+        qrUrl: data.qrUrl, // Use the actual QR URL from API
         style: style,
         createdAt: new Date().toISOString()
       })

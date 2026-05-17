@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import GeneratorPanel from '../components/GeneratorPanel'
 import Gallery from '../components/Gallery'
 
@@ -8,8 +8,33 @@ export default function Dashboard() {
   const [generations, setGenerations] = useState([])
   const [activeTab, setActiveTab] = useState('generate')
 
+  // Load saved images from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('qr-fire-gallery')
+    if (saved) {
+      try {
+        setGenerations(JSON.parse(saved))
+      } catch (e) {
+        console.error('Failed to load gallery:', e)
+      }
+    }
+  }, [])
+
+  // Save to localStorage whenever generations change
+  useEffect(() => {
+    if (generations.length > 0) {
+      localStorage.setItem('qr-fire-gallery', JSON.stringify(generations))
+    }
+  }, [generations])
+
   const handleNewGeneration = (image) => {
-    setGenerations(prev => [image, ...prev])
+    setGenerations(prev => {
+      const updated = [image, ...prev]
+      // Limit to 50 images to avoid localStorage limits
+      return updated.slice(0, 50)
+    })
+    // Switch to gallery to show the new image
+    setActiveTab('gallery')
   }
 
   return (

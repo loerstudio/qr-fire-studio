@@ -155,14 +155,6 @@ async function overlayQRCode(backgroundUrl, qrDataUrl) {
     const qrImage = await loadImage(qrDataUrl)
     ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize)
 
-    // Add epic scan text
-    ctx.fillStyle = 'white'
-    ctx.font = 'bold 32px Arial'
-    ctx.textAlign = 'center'
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
-    ctx.shadowBlur = 10
-    ctx.fillText('SCAN QUI', qrX + qrSize/2, qrY - 40)
-
     return canvas.toDataURL('image/jpeg', 0.95)
   } catch (error) {
     console.error('Overlay error:', error)
