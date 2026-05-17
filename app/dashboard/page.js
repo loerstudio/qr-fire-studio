@@ -8,7 +8,6 @@ export default function Dashboard() {
   const [referenceImage, setReferenceImage] = useState(null)
   const [generatedImages, setGeneratedImages] = useState([])
   const [isListening, setIsListening] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const fileInputRef = useRef(null)
   const recognitionRef = useRef(null)
 
@@ -58,14 +57,20 @@ export default function Dashboard() {
   }
 
   const quickActions = [
-    { icon: '🔥', text: 'QR Code Fitness', prompt: 'Crea un QR code fitness con atleta muscoloso, fuoco e lightning per https://salutediferro.com' },
-    { icon: '💼', text: 'QR Code Business', prompt: 'Crea un QR code business elegante e professionale per https://miolavoro.com' },
-    { icon: '📱', text: 'QR Code Social', prompt: 'Crea un QR code colorato per il mio Instagram @username' },
-    { icon: '🎨', text: 'QR Code Custom', prompt: 'Crea un QR code personalizzato per https://miositio.com con stile' }
+    { icon: '📊', text: 'Create QR codes', desc: 'Generate epic QR codes with AI graphics' },
+    { icon: '🌐', text: 'Build website', desc: 'QR codes for websites and landing pages' },
+    { icon: '💼', text: 'Develop business QR', desc: 'Professional QR codes for business' },
+    { icon: '🎨', text: 'Design', desc: 'Custom QR code designs and styles' }
   ]
 
-  const handleQuickAction = (prompt) => {
-    setInput(prompt)
+  const handleQuickAction = (action) => {
+    const prompts = {
+      'Create QR codes': 'Crea un QR code fitness con atleta muscoloso, fuoco e lightning per https://salutediferro.com',
+      'Build website': 'Crea un QR code per il mio sito web https://miositio.com con stile moderno e pulito',
+      'Develop business QR': 'Crea un QR code business professionale per https://azienda.com con colori oro e nero',
+      'Design': 'Crea un QR code personalizzato con design creativo per https://portfolio.com'
+    }
+    setInput(prompts[action.text] || action.text)
   }
 
   const handleSubmit = async (e) => {
@@ -74,7 +79,6 @@ export default function Dashboard() {
 
     setIsGenerating(true)
     try {
-      // Parse URL from message
       const urlMatch = input.match(/(https?:\/\/[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
       const url = urlMatch ? urlMatch[0] : 'https://example.com'
 
@@ -112,153 +116,128 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex">
-      {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full bg-gray-900 border-r border-gray-800 transition-transform duration-300 z-50 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} w-64 lg:translate-x-0 lg:static lg:w-16 xl:w-64`}>
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-4 border-b border-gray-800">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-                🔥
-              </div>
-              <span className="font-bold text-lg hidden xl:block">QR Fire Studio</span>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex">
+      {/* Sidebar - ESATTO COME MANUS */}
+      <div className="w-64 bg-[#0a0a0a] border-r border-[#2a2a2a] flex flex-col">
+        {/* Logo */}
+        <div className="p-6 border-b border-[#2a2a2a]">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center text-lg">
+              🔥
+            </div>
+            <span className="font-semibold text-lg text-white">QR Fire Studio</span>
+            <span className="text-xs bg-blue-600 px-2 py-1 rounded text-white">1.6 Lite</span>
+          </div>
+        </div>
+
+        {/* Navigation Icons - ESATTO MANUS */}
+        <nav className="flex-1 py-6">
+          <div className="space-y-1 px-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-[#1a1a1a] hover:bg-[#2a2a2a] cursor-pointer transition-colors">
+              <span className="text-xl">📝</span>
+            </div>
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-[#2a2a2a] cursor-pointer transition-colors">
+              <span className="text-xl">📱</span>
+            </div>
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-[#2a2a2a] cursor-pointer transition-colors">
+              <span className="text-xl">🕐</span>
+            </div>
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-[#2a2a2a] cursor-pointer transition-colors">
+              <span className="text-xl">🔍</span>
+            </div>
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-[#2a2a2a] cursor-pointer transition-colors">
+              <span className="text-xl">📚</span>
+            </div>
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-[#2a2a2a] cursor-pointer transition-colors">
+              <span className="text-xl">⚙️</span>
+            </div>
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-[#2a2a2a] cursor-pointer transition-colors">
+              <span className="text-xl">🎙️</span>
             </div>
           </div>
+        </nav>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4">
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3 p-3 rounded-lg bg-orange-600/20 text-orange-400">
-                <span className="text-xl">🎨</span>
-                <span className="hidden xl:block">Create</span>
-              </div>
-              <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 cursor-pointer">
-                <span className="text-xl">📱</span>
-                <span className="hidden xl:block">Gallery</span>
-              </div>
-              <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 cursor-pointer">
-                <span className="text-xl">⚡</span>
-                <span className="hidden xl:block">Templates</span>
-              </div>
-              <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 cursor-pointer">
-                <span className="text-xl">🎙️</span>
-                <span className="hidden xl:block">Voice Mode</span>
-              </div>
+        {/* Bottom Icons */}
+        <div className="p-4 border-t border-[#2a2a2a]">
+          <div className="space-y-1">
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-[#2a2a2a] cursor-pointer transition-colors">
+              <span className="text-xl">📞</span>
             </div>
-          </nav>
-
-          {/* User */}
-          <div className="p-4 border-t border-gray-800">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                👤
-              </div>
-              <div className="hidden xl:block">
-                <div className="text-sm font-medium">Demo User</div>
-                <div className="text-xs text-gray-400">Free Plan</div>
-              </div>
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-[#2a2a2a] cursor-pointer transition-colors">
+              <span className="text-xl">👥</span>
+            </div>
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-[#2a2a2a] cursor-pointer transition-colors">
+              <span className="text-xl">⚡</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile sidebar toggle */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-50 lg:hidden bg-gray-800 p-2 rounded-lg"
-      >
-        ☰
-      </button>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:ml-0">
+      {/* Main Content - ESATTO MANUS */}
+      <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm">
-          <div className="max-w-4xl mx-auto px-4 py-6">
-            <h1 className="text-3xl font-bold text-center mb-2">What can I create for you?</h1>
-            <p className="text-gray-400 text-center">Generate epic QR codes with AI-powered graphics</p>
+        <div className="p-6 border-b border-[#2a2a2a] flex justify-between items-center">
+          <div></div>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-400">Free plan</span>
+            <button className="text-blue-400 text-sm hover:text-blue-300">Upgrade</button>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm">⚡ 300</span>
+              <button className="p-2 hover:bg-[#2a2a2a] rounded">
+                <span className="text-lg">🔔</span>
+              </button>
+              <button className="p-2 hover:bg-[#2a2a2a] rounded">
+                <span className="text-lg">⋯</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Generated Images Gallery */}
-        {generatedImages.length > 0 && (
-          <div className="border-b border-gray-800 bg-gray-900/30">
-            <div className="max-w-4xl mx-auto px-4 py-4">
-              <h3 className="text-lg font-semibold mb-3">Recent Creations</h3>
-              <div className="flex space-x-4 overflow-x-auto">
-                {generatedImages.slice(0, 5).map((image) => (
-                  <div key={image.id} className="flex-shrink-0">
-                    <img
-                      src={image.imageUrl}
-                      alt="Generated QR"
-                      className="w-24 h-24 object-cover rounded-lg border border-gray-700"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Center Content */}
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          {/* Main Title - ESATTO MANUS */}
+          <h1 className="text-4xl font-light text-center mb-16 text-gray-200">
+            What can I do for you?
+          </h1>
 
-        {/* Main Input Area */}
-        <div className="flex-1 flex flex-col justify-center items-center p-4">
-          <div className="w-full max-w-4xl">
+          {/* Input Field - ESATTO MANUS */}
+          <form onSubmit={handleSubmit} className="w-full max-w-3xl mb-12">
+            <div className="relative">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Assign a task or ask anything"
+                className="w-full bg-[#1a1a1a] border border-[#3a3a3a] rounded-2xl px-6 py-4 text-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors pr-24"
+                disabled={isGenerating}
+              />
 
-            {/* Reference Image Preview */}
-            {referenceImage && (
-              <div className="mb-6 p-4 bg-gray-800 rounded-xl border border-gray-700">
-                <div className="flex items-center space-x-3">
-                  <img src={referenceImage} alt="Reference" className="w-16 h-16 object-cover rounded-lg" />
-                  <div>
-                    <p className="text-sm text-gray-300">Reference image loaded</p>
-                    <button
-                      onClick={() => setReferenceImage(null)}
-                      className="text-red-400 hover:text-red-300 text-sm"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Main Input */}
-            <form onSubmit={handleSubmit} className="mb-8">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Describe the QR code you want to create... Include your URL and design style"
-                  className="w-full bg-gray-800 text-white border-2 border-gray-700 rounded-2xl px-6 py-4 text-lg focus:outline-none focus:border-orange-500 transition-colors pr-32"
-                  disabled={isGenerating}
-                />
-
-                {/* Voice and Upload buttons */}
-                <div className="absolute right-2 top-2 flex space-x-2">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-2 bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors"
-                  >
-                    📎
-                  </button>
-                  <button
-                    type="button"
-                    onClick={toggleVoiceInput}
-                    className={`p-2 rounded-xl transition-colors ${isListening ? 'bg-red-600 animate-pulse' : 'bg-gray-700 hover:bg-gray-600'}`}
-                  >
-                    🎙️
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!input.trim() || isGenerating}
-                    className="px-6 py-2 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-medium hover:from-orange-700 hover:to-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isGenerating ? '⚡' : '🚀'}
-                  </button>
-                </div>
+              {/* Icons inside input - ESATTO MANUS */}
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center space-x-3">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-1 hover:bg-[#2a2a2a] rounded transition-colors"
+                  title="Upload file"
+                >
+                  <span className="text-gray-400 text-lg">📎</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleVoiceInput}
+                  className={`p-1 rounded transition-colors ${isListening ? 'bg-red-600 text-white' : 'hover:bg-[#2a2a2a] text-gray-400'}`}
+                  title="Voice input"
+                >
+                  <span className="text-lg">🎙️</span>
+                </button>
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isGenerating}
+                  className="p-1 hover:bg-[#2a2a2a] rounded transition-colors disabled:opacity-50"
+                  title="Send"
+                >
+                  <span className="text-gray-400 text-lg">↗</span>
+                </button>
               </div>
 
               <input
@@ -268,57 +247,80 @@ export default function Dashboard() {
                 accept="image/*"
                 className="hidden"
               />
-            </form>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {quickActions.map((action, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleQuickAction(action.prompt)}
-                  className="p-4 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl transition-colors text-left"
-                  disabled={isGenerating}
-                >
-                  <div className="text-2xl mb-2">{action.icon}</div>
-                  <div className="text-sm font-medium">{action.text}</div>
-                </button>
-              ))}
             </div>
 
-            {/* Loading State */}
-            {isGenerating && (
-              <div className="mt-8 text-center">
-                <div className="inline-flex items-center space-x-3 bg-gray-800 px-6 py-4 rounded-2xl">
-                  <div className="flex space-x-1">
-                    <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce"></div>
-                    <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                  </div>
-                  <span className="text-gray-300">Creating your epic QR code...</span>
-                </div>
-              </div>
-            )}
+            {/* Blue dot indicator */}
+            <div className="flex justify-end mt-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            </div>
+          </form>
 
-            {/* Voice Status */}
-            {isListening && (
-              <div className="mt-4 text-center">
-                <div className="inline-flex items-center space-x-2 bg-red-600/20 text-red-400 px-4 py-2 rounded-lg">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                  <span>Listening... Speak your QR code request</span>
+          {/* Quick Actions - ESATTO MANUS */}
+          <div className="flex flex-wrap gap-4 justify-center max-w-4xl">
+            {quickActions.map((action, index) => (
+              <button
+                key={index}
+                onClick={() => handleQuickAction(action)}
+                className="flex items-center space-x-3 bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl px-6 py-4 transition-colors group"
+                disabled={isGenerating}
+              >
+                <span className="text-2xl">{action.icon}</span>
+                <div className="text-left">
+                  <div className="text-sm font-medium text-gray-200">{action.text}</div>
+                  <div className="text-xs text-gray-500">{action.desc}</div>
                 </div>
-              </div>
-            )}
+              </button>
+            ))}
           </div>
-        </div>
-      </div>
 
-      {/* Sidebar overlay for mobile */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+          {/* Loading State */}
+          {isGenerating && (
+            <div className="mt-8">
+              <div className="flex items-center space-x-3 text-gray-400">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                </div>
+                <span>Creating your epic QR code...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Voice Status */}
+          {isListening && (
+            <div className="mt-4">
+              <div className="flex items-center space-x-2 bg-red-600/20 text-red-400 px-4 py-2 rounded-lg">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="text-sm">Listening... Speak your request</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Generated Images */}
+        {generatedImages.length > 0 && (
+          <div className="border-t border-[#2a2a2a] p-6">
+            <h3 className="text-lg font-medium mb-4 text-gray-200">Recent Creations</h3>
+            <div className="grid grid-cols-4 gap-4">
+              {generatedImages.slice(0, 8).map((image) => (
+                <div key={image.id} className="relative group">
+                  <img
+                    src={image.imageUrl}
+                    alt="Generated QR"
+                    className="w-full aspect-square object-cover rounded-lg border border-[#3a3a3a]"
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
+                      Download
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
